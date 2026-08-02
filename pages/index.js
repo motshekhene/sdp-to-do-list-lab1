@@ -10,6 +10,7 @@ export default function Home() {
 
   const [editingTask, setEditingTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [sortOption, setSortOption] = useState("due_date"); // ✅ inside component
 
   const refreshTasks = async () => {
     const res = await fetch("/api/tasks");
@@ -70,6 +71,14 @@ export default function Home() {
     refreshTasks();
   };
 
+  // ✅ Sorting logic inside component
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (sortOption === "topic") return a.topic.localeCompare(b.topic);
+    if (sortOption === "status") return a.status.localeCompare(b.status);
+    if (sortOption === "due_date") return new Date(a.due_date) - new Date(b.due_date);
+    return 0;
+  });
+
   return (
     <div className={styles.container}>
       <h1 className={styles.title}>My Tasks</h1>
@@ -114,64 +123,79 @@ export default function Home() {
       {tasks.length === 0 ? (
         <p className={styles.empty}>— nothing on the list yet —</p>
       ) : (
-        <ul className={styles.list}>
-          {tasks.map((task) => (
-            <li
-              key={task.id}
-              className={`${styles.listItem} ${task.overdue ? styles.overdue : ""} ${
-                task.status === "COMPLETE" ? styles.complete : ""
-              }`}
+        <>
+          <div className={styles.sortBar}>
+            <label htmlFor="sort">Sort by: </label>
+            <select
+              id="sort"
+              value={sortOption}
+              onChange={(e) => setSortOption(e.target.value)}
+              className={styles.select}
             >
-              <div className={styles.taskInfo}>
-                <div className={styles.taskTitle}>{task.title}</div>
-                <div className={styles.taskDescription}>{task.description}</div>
-                <div className={styles.taskMeta}>
-                  <span className={styles.topicTag}>{task.topic}</span>
-                  <span>{task.due_date}</span>
-                  <span
-                    className={`${styles.statusTag} ${
-                      task.status === "COMPLETE"
-                        ? styles.statusDone
-                        : task.overdue
-                        ? styles.statusOverdue
-                        : ""
-                    }`}
-                  >
-                    {task.status === "COMPLETE" ? "✔ Done" : task.overdue ? "⚠ Overdue" : task.status}
-                  </span>
-                </div>
-              </div>
-              <div className={styles.taskActions}>
-  {task.status !== "COMPLETE" && (
-    <>
-      <button
-        onClick={() => markDone(task.id)}
-        className={styles.taskActionButton}
-      >
-        Done
-      </button>
-      <button
-        onClick={() => {
-          setEditingTask(task);
-          setIsModalOpen(true);
-        }}
-        className={styles.taskActionButton}
-      >
-        Edit
-      </button>
-    </>
-  )}
-  <button
-    onClick={() => archiveTask(task.id)}
-    className={styles.taskActionButton}
-  >
-    Archive
-  </button>
-</div>
+              <option value="topic">Topic</option>
+              <option value="status">Status</option>
+              <option value="due_date">Due Date</option>
+            </select>
+          </div>
 
-            </li>
-          ))}
-        </ul>
+          <ul className={styles.list}>
+            {sortedTasks.map((task) => (
+              <li
+                key={task.id}
+                className={`${styles.listItem} ${task.overdue ? styles.overdue : ""} ${
+                  task.status === "COMPLETE" ? styles.complete : ""
+                }`}
+              >
+                <div className={styles.taskInfo}>
+                  <div className={styles.taskTitle}>{task.title}</div>
+                  <div className={styles.taskDescription}>{task.description}</div>
+                  <div className={styles.taskMeta}>
+                    <span className={styles.topicTag}>{task.topic}</span>
+                    <span>{task.due_date}</span>
+                    <span
+                      className={`${styles.statusTag} ${
+                        task.status === "COMPLETE"
+                          ? styles.statusDone
+                          : task.overdue
+                          ? styles.statusOverdue
+                          : ""
+                      }`}
+                    >
+                      {task.status === "COMPLETE" ? "✔ Done" : task.overdue ? "⚠ Overdue" : task.status}
+                    </span>
+                  </div>
+                </div>
+                <div className={styles.taskActions}>
+                  {task.status !== "COMPLETE" && (
+                    <>
+                      <button
+                        onClick={() => markDone(task.id)}
+                        className={styles.taskActionButton}
+                      >
+                        Done
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingTask(task);
+                          setIsModalOpen(true);
+                        }}
+                        className={styles.taskActionButton}
+                      >
+                        Edit
+                      </button>
+                    </>
+                  )}
+                  <button
+                    onClick={() => archiveTask(task.id)}
+                    className={styles.taskActionButton}
+                  >
+                    Archive
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
 
       {isModalOpen && editingTask && (
