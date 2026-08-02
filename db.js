@@ -1,4 +1,3 @@
-// db.js
 import sqlite3 from "sqlite3";
 
 const db = new sqlite3.Database("./todo.db");
@@ -25,15 +24,47 @@ export function createTask(title, description, due_date, topic) {
   });
 }
 
+// ✅ Single, correct updateTask with partial update support
 export function updateTask(id, fields) {
-  const { title, description, dueDate, topic, status } = fields;
+  const updates = [];
+  const values = [];
+
+  if (fields.title !== undefined) {
+    updates.push("title=?");
+    values.push(fields.title);
+  }
+  if (fields.description !== undefined) {
+    updates.push("description=?");
+    values.push(fields.description);
+  }
+  if (fields.due_date !== undefined) {
+    updates.push("due_date=?");
+    values.push(fields.due_date);
+  }
+  if (fields.topic !== undefined) {
+    updates.push("topic=?");
+    values.push(fields.topic);
+  }
+  if (fields.status !== undefined) {
+    updates.push("status=?");
+    values.push(fields.status);
+  }
+
+  if (updates.length === 0) {
+    return Promise.resolve(0); // nothing to update
+  }
+
   return new Promise((resolve, reject) => {
     db.run(
-      `UPDATE tasks SET title=?, description=?, due_date=?, topic=?, status=? WHERE id=?`,
-      [title, description, dueDate, topic, status, id],
+      `UPDATE tasks SET ${updates.join(", ")} WHERE id=?`,
+      [...values, id],
       function (err) {
-        if (err) reject(err);
-        else resolve(this.changes);
+        if (err) {
+          console.error("Error updating task:", err);
+          reject(err);
+        } else {
+          resolve(this.changes); // number of rows updated
+        }
       }
     );
   });
