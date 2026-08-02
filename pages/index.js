@@ -10,12 +10,22 @@ export default function Home() {
 
   const [editingTask, setEditingTask] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [sortOption, setSortOption] = useState("due_date"); // ✅ inside component
+  const [sortOption, setSortOption] = useState("due_date");
 
   const refreshTasks = async () => {
-    const res = await fetch("/api/tasks");
-    const data = await res.json();
-    setTasks(data);
+    try {
+      const res = await fetch("/api/tasks");
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setTasks(data);
+      } else {
+        setTasks([]);
+        console.error("Expected array, got:", data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch tasks:", err);
+      setTasks([]);
+    }
   };
 
   useEffect(() => {
@@ -71,13 +81,19 @@ export default function Home() {
     refreshTasks();
   };
 
-  // ✅ Sorting logic inside component
-  const sortedTasks = [...tasks].sort((a, b) => {
-    if (sortOption === "topic") return a.topic.localeCompare(b.topic);
-    if (sortOption === "status") return a.status.localeCompare(b.status);
-    if (sortOption === "due_date") return new Date(a.due_date) - new Date(b.due_date);
-    return 0;
-  });
+  useEffect(() => {
+  console.log("Sort option changed:", sortOption);
+  console.log("Tasks before sort:", tasks);
+  console.log("Tasks after sort:", sortedTasks);
+}, [sortOption, tasks]);
+
+ const sortedTasks = Array.isArray(tasks) ? [...tasks].sort((a, b) => {
+  if (sortOption === "topic") return (a.topic || "").localeCompare(b.topic || "");
+  if (sortOption === "status") return (a.status || "").localeCompare(b.status || "");
+  if (sortOption === "due_date") return new Date(a.due_date || 0) - new Date(b.due_date || 0);
+  return 0;
+}) : [];
+
 
   return (
     <div className={styles.container}>
@@ -86,6 +102,7 @@ export default function Home() {
         {tasks.length} task{tasks.length !== 1 ? "s" : ""} on record
       </p>
 
+      {/* Add Task Form */}
       <form onSubmit={handleSubmit} className={styles.form}>
         <input
           type="text"
@@ -120,6 +137,7 @@ export default function Home() {
         <button type="submit" className={styles.button}>Add Task</button>
       </form>
 
+      {/* Task List */}
       {tasks.length === 0 ? (
         <p className={styles.empty}>— nothing on the list yet —</p>
       ) : (
@@ -198,6 +216,7 @@ export default function Home() {
         </>
       )}
 
+      {/* Edit Modal */}
       {isModalOpen && editingTask && (
         <div className={styles.modalOverlay}>
           <div className={styles.modal}>

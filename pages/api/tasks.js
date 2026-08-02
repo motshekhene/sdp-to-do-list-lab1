@@ -1,47 +1,51 @@
 
-import { createTask, updateTask, archiveTask, getTasks } from "../../db.js";
-
+import { createTask, getTasks, updateTask, archiveTask } from "../../lib/db";
 
 export default async function handler(req, res) {
-  try {
-    if (req.method === 'GET') {
-      // Fetch tasks, optionally sorted
-      const { orderBy } = req.query;
-      const tasks = await getTasks(orderBy);
-      res.status(200).json(tasks);
-
-   } else if (req.method === 'POST') {
-  const { title, description, due_date, topic } = req.body;
-  if (!title || !due_date || !topic) {
-    return res.status(400).json({ error: 'title, due_date, and topic are required' });
+  if (req.method === "POST") {
+    const { title, description, topic, due_date } = req.body;
+    try {
+      const task = await createTask(title, description, due_date, topic);
+      res.status(200).json(task);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
-  const newTask = await createTask(title, description, due_date, topic);
-  res.status(201).json(newTask);  // return full task object
-}
- else if (req.method === 'PUT') {
-      // Update an existing task
-      const { id, title, description, due_date, topic, status } = req.body;
-      if (!id) {
-        return res.status(400).json({ error: 'Task id is required' });
-      }
-      const changes = await updateTask(id, { title, description, dueDate: due_date, topic, status });
-      res.status(200).json({ updated: changes });
 
-    } else if (req.method === 'PATCH') {
-      // Archive a task
-      const { id } = req.body;
-      if (!id) {
-        return res.status(400).json({ error: 'Task id is required' });
-      }
+else if (req.method === "GET") {
+  try {
+    const tasks = await getTasks();
+    res.status(200).json(Array.isArray(tasks) ? tasks : []);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+}
+
+
+  else if (req.method === "PUT") {
+    const { id, ...fields } = req.body;
+    try {
+      const changes = await updateTask(id, fields);
+      res.status(200).json({ updated: changes });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  else if (req.method === "PATCH") {
+    const { id } = req.body;
+    try {
       const changes = await archiveTask(id);
       res.status(200).json({ archived: changes });
-
-    } else {
-      res.setHeader('Allow', ['GET', 'POST', 'PUT', 'PATCH']);
-      res.status(405).end(`Method ${req.method} Not Allowed`);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
     }
-  } catch (err) {
-    console.error('API error:', err);
-    res.status(500).json({ error: 'Internal Server Error' });
+  }
+
+  else {
+    res.setHeader("Allow", ["GET", "POST", "PUT", "PATCH"]);
+    res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
+
+
