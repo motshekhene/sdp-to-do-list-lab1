@@ -5,7 +5,11 @@ export default function Home() {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
   const [topic, setTopic] = useState("");
+  const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
+
+  const [editingTask, setEditingTask] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const refreshTasks = async () => {
     const res = await fetch("/api/tasks");
@@ -19,9 +23,9 @@ export default function Home() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !topic || !dueDate) return;
+    if (!title || !topic || !description || !dueDate) return;
 
-    const newTask = { title, topic, due_date: dueDate };
+    const newTask = { title, description, topic, due_date: dueDate };
 
     await fetch("/api/tasks", {
       method: "POST",
@@ -31,6 +35,7 @@ export default function Home() {
 
     setTitle("");
     setTopic("");
+    setDescription("");
     setDueDate("");
     refreshTasks();
   };
@@ -50,6 +55,18 @@ export default function Home() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
+    refreshTasks();
+  };
+
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    await fetch("/api/tasks", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(editingTask),
+    });
+    setIsModalOpen(false);
+    setEditingTask(null);
     refreshTasks();
   };
 
@@ -77,6 +94,13 @@ export default function Home() {
           required
           className={styles.input}
         />
+        <textarea
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+          className={styles.textarea}
+        />
         <input
           type="datetime-local"
           value={dueDate}
@@ -100,6 +124,7 @@ export default function Home() {
             >
               <div className={styles.taskInfo}>
                 <div className={styles.taskTitle}>{task.title}</div>
+                <div className={styles.taskDescription}>{task.description}</div>
                 <div className={styles.taskMeta}>
                   <span className={styles.topicTag}>{task.topic}</span>
                   <span>{task.due_date}</span>
@@ -117,24 +142,90 @@ export default function Home() {
                 </div>
               </div>
               <div className={styles.taskActions}>
-                {task.status !== "COMPLETE" && (
-                  <button
-                    onClick={() => markDone(task.id)}
-                    className={styles.taskActionButton}
-                  >
-                    Done
-                  </button>
-                )}
-                <button
-                  onClick={() => archiveTask(task.id)}
-                  className={styles.taskActionButton}
-                >
-                  Archive
-                </button>
-              </div>
+  {task.status !== "COMPLETE" && (
+    <>
+      <button
+        onClick={() => markDone(task.id)}
+        className={styles.taskActionButton}
+      >
+        Done
+      </button>
+      <button
+        onClick={() => {
+          setEditingTask(task);
+          setIsModalOpen(true);
+        }}
+        className={styles.taskActionButton}
+      >
+        Edit
+      </button>
+    </>
+  )}
+  <button
+    onClick={() => archiveTask(task.id)}
+    className={styles.taskActionButton}
+  >
+    Archive
+  </button>
+</div>
+
             </li>
           ))}
         </ul>
+      )}
+
+      {isModalOpen && editingTask && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <h2>Edit Task</h2>
+            <form onSubmit={saveEdit} className={styles.form}>
+              <input
+                type="text"
+                value={editingTask.title}
+                onChange={(e) =>
+                  setEditingTask({ ...editingTask, title: e.target.value })
+                }
+                className={styles.input}
+              />
+              <textarea
+                value={editingTask.description}
+                onChange={(e) =>
+                  setEditingTask({ ...editingTask, description: e.target.value })
+                }
+                className={styles.textarea}
+              />
+              <input
+                type="text"
+                value={editingTask.topic}
+                onChange={(e) =>
+                  setEditingTask({ ...editingTask, topic: e.target.value })
+                }
+                className={styles.input}
+              />
+              <input
+                type="datetime-local"
+                value={editingTask.due_date}
+                onChange={(e) =>
+                  setEditingTask({ ...editingTask, due_date: e.target.value })
+                }
+                className={styles.input}
+              />
+              <div className={styles.modalActions}>
+                <button type="submit" className={styles.button}>Save</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setEditingTask(null);
+                  }}
+                  className={styles.taskActionButton}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
