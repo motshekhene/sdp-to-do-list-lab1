@@ -1,65 +1,43 @@
-# Setup
+## Prerequisites
+- **Node.js v20.x** (tested with Node v20.11.0)
+- **npm** (bundled with Node)
 
-## 1. Install Dependencies
+## Steps from a Clean Clone
 
-```bash
-npm install
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/motshekhene/sdp-to-do-list-lab1.git
+   cd sdp-to-do-list-lab1
+   ```
 
-## 2. Initialize the Database
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-Create `todo.db` from `schema.sql`:
+3. **Initialize the database**
+   - On first run, the application will automatically create `todo.db` and set up the required tables.
+   - If you want to reset, delete `todo.db` and restart.
 
-```bash
-sqlite3 todo.db < schema.sql
-```
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+   This will start Next.js on http://localhost:3000.
 
-## 3. Start the Server
+5. **Open the application**
+   In your browser, go to:
+   ```
+   http://localhost:3000
+   ```
+   You should see the todo app interface.
 
-```bash
-npm run dev
-```
-
-Open http://localhost:3000.
-
-## 4. API Endpoints
-
-- `GET /api/tasks` → List tasks (with overdue flag)
-- `POST /api/tasks` → Create a task
-- `PUT /api/tasks` → Update a task
-- `PATCH /api/tasks` → Archive a task
-
-Example POST body:
-
-```json
-{
-  "title": "Finish lab report",
-  "due_date": "2026-08-05T23:59:00",
-  "topic": "School"
-}
-```
-
-## 5. Database Schema
-
-```sql
-CREATE TABLE tasks (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  title TEXT NOT NULL,
-  description TEXT,
-  due_date DATETIME NOT NULL,
-  topic TEXT NOT NULL,
-  status TEXT CHECK(status IN ('TODO','IN_PROGRESS','COMPLETE')) NOT NULL DEFAULT 'TODO',
-  archived INTEGER NOT NULL DEFAULT 0,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-### Columns
-
-- **id** → unique identifier
-- **title / topic / due_date** → required fields
-- **description** → optional details
-- **status** → `TODO`, `IN_PROGRESS`, `COMPLETE`
-- **archived** → hide instead of delete
-- **created_at** → timestamp
-- **overdue** → derived at query time
+6. **Run the tests**
+   ```bash
+   npm test
+   ```
+   This runs the Jest test suite against an in-memory SQLite database. Tests cover:
+   - Creating and fetching tasks
+   - Archiving tasks
+   - Overdue rule enforcement
+   - Marking tasks as complete
