@@ -1,127 +1,157 @@
-import request from "supertest";
-import { createServer } from "http";
-import { parse } from "url";
-import handler from "../pages/api/tasks"; // Next.js API route
+// tests/task.test.js
+const { testApiHandler } = require("next-test-api-route-handler");
+const handler = require("../pages/api/tasks").default;
 
-function runHandler(req, res) {
-  return new Promise((resolve) => {
-    handler(req, res);
-    res.on("finish", resolve);
-  });
-}
+describe("Task API", () => {
+  test("creates and fetches a task", async () => {
+    await testApiHandler({
+      pagesHandler: handler,
+      test: async ({ fetch }) => {
+        const createRes = await fetch({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Test Task",
+            description: "Testing",
+            due_date: "2026-08-03",
+            topic: "Lab",
+          }),
+        });
+        expect(createRes.status).toBe(200);
 
-function makeServer() {
-  return createServer((req, res) => {
-    let data = "";
-
-    req.on("data", chunk => {
-      data += chunk;
-    });
-
-    req.on("end", () => {
-      try {
-        req.body = JSON.parse(data || "{}");
-      } catch {
-        req.body = {};
-      }
-
-      res.status = (code) => {
-        res.statusCode = code;
-        return res;
-      };
-      res.json = (payload) => {
-        res.setHeader("Content-Type", "application/json");
-        res.end(JSON.stringify(payload));
-        return res;
-      };
-
-      handler(req, res);
+        const listRes = await fetch({ method: "GET" });
+        const tasks = await listRes.json();
+        expect(listRes.status).toBe(200);
+        expect(tasks.some(t => t.title === "Test Task")).toBe(true);
+      },
     });
   });
-}
 
-describe("Tasks API", () => {
-  let server;
+  test("archives a task", async () => {
+    await testApiHandler({
+      pagesHandler: handler,
+      test: async ({ fetch }) => {
+        const createRes = await fetch({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Archive Me",
+            description: "Testing archive",
+            due_date: "2026-08-03",
+            topic: "Lab",
+          }),
+        });
+        const created = await createRes.json();
 
-  beforeAll(() => {
-    server = makeServer().listen(4000);
+        const archiveRes = await fetch({
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: created.id }),
+        });
+        expect(archiveRes.status).toBe(200);
+
+        const listRes = await fetch({ method: "GET" });
+        const tasks = await listRes.json();
+        const archivedTask = tasks.find(t => t.id === created.id);
+        expect(archivedTask).toBeUndefined(); // getTasks() filters out archived=1
+      },
+    });
   });
 
-  afterAll(() => {
-    server.close();
+  test("flags overdue tasks", async () => {
+    await testApiHandler({
+      pagesHandler: handler,
+      test: async ({ fetch }) => {
+        await fetch({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Overdue Task",
+            description: "Should be flagged",
+            due_date: "2020-01-01",
+            topic: "Lab",
+          }),
+        });
+
+        const listRes = await fetch({ method: "GET" });
+        const tasks = await listRes.json();
+        const overdueTask = tasks.find(t => t.title === "Overdue Task");
+        expect(overdueTask.overdue).toBe(true);
+      },
+    });
   });
 
-  test("Create & fetch task", async () => {
-    const createRes = await request(server)
-      .post("/api/tasks")
-      .send({
-        title: "Test Task",
-        description: "Testing create",
-        topic: "Work",
-        due_date: "2026-08-01T10:00",
-      });
-    expect(createRes.status).toBe(200);
-    expect(createRes.body.title).toBe("Test Task");
+  test("edits a task", async () => {
+    await testApiHandler({
+      pagesHandler: handler,
+      test: async ({ fetch }) => {
+        const createRes = await fetch({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Original Title",
+            description: "Original description",
+            due_date: "2026-08-03",
+            topic: "Lab",
+          }),
+        });
+        const created = await createRes.json();
 
-    const getRes = await request(server).get("/api/tasks");
-    expect(getRes.status).toBe(200);
-    expect(getRes.body.length).toBeGreaterThan(0);
+        const updateRes = await fetch({
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: created.id,
+            title: "Updated Title",
+            status: "COMPLETE",
+            topic: "Assignment",
+          }),
+        });
+        expect(updateRes.status).toBe(200);
+        const updateBody = await updateRes.json();
+        expect(updateBody.updated).toBe(1);
+
+        const listRes = await fetch({ method: "GET" });
+        const tasks = await listRes.json();
+        const updatedTask = tasks.find(t => t.id === created.id);
+        expect(updatedTask.title).toBe("Updated Title");
+        expect(updatedTask.status).toBe("COMPLETE");
+        expect(updatedTask.topic).toBe("Assignment");
+      },
+    });
   });
 
-  test("Archive task", async () => {
-    const createRes = await request(server)
-      .post("/api/tasks")
-      .send({
-        title: "Archive Me",
-        description: "Testing archive",
-        topic: "School",
-        due_date: "2026-08-02T10:00",
-      });
-    const id = createRes.body.id;
+  test("sorts tasks by due date", async () => {
+    await testApiHandler({
+      pagesHandler: handler,
+      test: async ({ fetch }) => {
+        await fetch({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Later Task",
+            description: "Due later",
+            due_date: "2026-12-25",
+            topic: "Lab",
+          }),
+        });
+        await fetch({
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Sooner Task",
+            description: "Due sooner",
+            due_date: "2026-08-05",
+            topic: "Lab",
+          }),
+        });
 
-    const archiveRes = await request(server)
-      .patch("/api/tasks")
-      .send({ id });
-    expect(archiveRes.status).toBe(200);
-    expect(archiveRes.body.archived).toBeTruthy();
-  });
-
-  test("Overdue rule", async () => {
-    await request(server)
-      .post("/api/tasks")
-      .send({
-        title: "Past Due",
-        description: "Testing overdue",
-        topic: "Work",
-        due_date: "2020-01-01T10:00", // definitely overdue
-      });
-
-    const getRes = await request(server).get("/api/tasks");
-    const overdueTask = getRes.body.find((t) => t.title === "Past Due");
-    expect(overdueTask).toBeDefined();
-    // If your API adds an `overdue` flag, assert it here:
-    // expect(overdueTask.overdue).toBe(true);
-  });
-
-  test("Mark task as complete", async () => {
-    const createRes = await request(server)
-      .post("/api/tasks")
-      .send({
-        title: "Finish Me",
-        description: "Testing status update",
-        topic: "Work",
-        due_date: "2026-08-01T10:00",
-      });
-    const id = createRes.body.id;
-
-    const updateRes = await request(server)
-      .put("/api/tasks")
-      .send({ id, status: "COMPLETE" });
-    expect(updateRes.status).toBe(200);
-    expect(updateRes.body.updated).toBe(1);
-
-    const getRes = await request(server).get("/api/tasks");
-    const updatedTask = getRes.body.find((t) => t.id === id);
-    expect(updatedTask.status).toBe("COMPLETE");
+        const listRes = await fetch({ method: "GET" });
+        const tasks = await listRes.json();
+        const laterIndex = tasks.findIndex(t => t.title === "Later Task");
+        const soonerIndex = tasks.findIndex(t => t.title === "Sooner Task");
+        expect(soonerIndex).toBeLessThan(laterIndex);
+      },
+    });
   });
 });
