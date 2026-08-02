@@ -1,13 +1,11 @@
-##  Third‑Party Code
+# Third-Party Code
 
-- **Next.js**  
-  Framework for building both the frontend and backend API routes in one project. Chosen for its simplicity in creating full‑stack applications.
+This project uses the following libraries and packages:
 
-- **React**  
-  UI library used by Next.js. Chosen for building interactive components and managing state in the task list and form.
+- **next** — Provides the React framework and API routes for building the frontend and backend in one project.
 
-- **sqlite3**  
-  Database driver for SQLite. Chosen because it provides a lightweight, file‑based database that is easy to set up and perfect for lab projects.
+- **sqlite3** — Lightweight relational database driver for Node.js, chosen for local-first persistence.
 
-- **Node.js / npm**  
-  Runtime and package manager. Chosen to run the JavaScript backend and manage dependencies efficiently.
+- **jest** — Testing framework used to run unit and integration tests.
+
+- **supertest** — HTTP assertions library used to test API routes by simulating requests and responses.
