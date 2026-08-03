@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import styles from "../styles/Home.module.css";
 
+const STATUS_LABELS = {
+  TODO: "Todo",
+  "IN-PROGRESS": "In Progress",
+  COMPLETE: "Complete",
+};
+
 export default function Home() {
   const [tasks, setTasks] = useState([]);
   const [title, setTitle] = useState("");
@@ -46,6 +52,15 @@ export default function Home() {
     refreshTasks();
   };
 
+  const markInProgress = async (id) => {
+    await fetch("/api/tasks", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, status: "IN-PROGRESS" }),
+    });
+    refreshTasks();
+  };
+
   const markDone = async (id) => {
     await fetch("/api/tasks", {
       method: "PUT",
@@ -82,6 +97,21 @@ export default function Home() {
     if (sortOption === "due_date") return new Date(a.due_date || 0) - new Date(b.due_date || 0);
     return 0;
   });
+
+  const renderStatusTag = (task) => {
+    const statusClass =
+      task.status === "COMPLETE"
+        ? styles.statusDone
+        : task.status === "IN-PROGRESS"
+        ? styles.statusInProgress
+        : "";
+
+    return (
+      <span className={`${styles.statusTag} ${statusClass}`}>
+        {STATUS_LABELS[task.status] || task.status}
+      </span>
+    );
+  };
 
   return (
     <div className={styles.container}>
@@ -159,25 +189,24 @@ export default function Home() {
                   <div className={styles.taskDescription}>{task.description}</div>
                   <div className={styles.taskMeta}>
                     <span className={styles.topicTag}>{task.topic}</span>
-                    <span>{task.due_date}</span>
-                    <span
-                      className={`${styles.statusTag} ${
-                        task.status === "COMPLETE"
-                          ? styles.statusDone
-                          : task.overdue
-                          ? styles.statusOverdue
-                          : ""
-                      }`}
-                    >
-                      {task.status === "COMPLETE"
-                        ? "✔ Done"
-                        : task.overdue
-                        ? "⚠ Overdue"
-                        : task.status}
+                   <span>
+                      {new Date(task.due_date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
                     </span>
+                    {renderStatusTag(task)}
+                    {task.overdue && (
+                      <span className={styles.overdueBadge}>⚠ Overdue</span>
+                    )}
                   </div>
                 </div>
                 <div className={styles.taskActions}>
+                  {task.status === "TODO" && (
+                    <button
+                      onClick={() => markInProgress(task.id)}
+                      className={styles.taskActionButton}
+                    >
+                      Start
+                    </button>
+                  )}
                   {task.status !== "COMPLETE" && (
                     <>
                       <button
@@ -218,7 +247,9 @@ export default function Home() {
                   <div className={styles.taskDescription}>{task.description}</div>
                   <div className={styles.taskMeta}>
                     <span className={styles.topicTag}>{task.topic}</span>
-                    <span>{task.due_date}</span>
+                    <span>
+                      {new Date(task.due_date).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                    </span>
                     <span className={styles.statusTag}>🗄 Archived</span>
                   </div>
                 </div>

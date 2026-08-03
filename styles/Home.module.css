@@ -267,3 +267,19 @@
   color: #d9534f;
   font-weight: 700;
 }
+
+.statusInProgress {
+  color: #d19a20;
+}
+
+.overdueBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: #d9534f;
+  background: #fff0f0;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}

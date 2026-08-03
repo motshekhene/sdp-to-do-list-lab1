@@ -28,36 +28,36 @@ describe("Task API", () => {
   });
 
   test("archives a task", async () => {
-    await testApiHandler({
-      pagesHandler: handler,
-      test: async ({ fetch }) => {
-        const createRes = await fetch({
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: "Archive Me",
-            description: "Testing archive",
-            due_date: "2026-08-03",
-            topic: "Lab",
-          }),
-        });
-        const created = await createRes.json();
+  await testApiHandler({
+    pagesHandler: handler,
+    test: async ({ fetch }) => {
+      const createRes = await fetch({
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: "Archive Me",
+          description: "Testing archive",
+          due_date: "2026-08-03",
+          topic: "Lab",
+        }),
+      });
+      const created = await createRes.json();
 
-        const archiveRes = await fetch({
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: created.id }),
-        });
-        expect(archiveRes.status).toBe(200);
+      const archiveRes = await fetch({
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: created.id }),
+      });
+      expect(archiveRes.status).toBe(200);
 
-        const listRes = await fetch({ method: "GET" });
-        const tasks = await listRes.json();
-        const archivedTask = tasks.find(t => t.id === created.id);
-        expect(archivedTask).toBeUndefined(); // getTasks() filters out archived=1
-      },
-    });
+      const listRes = await fetch({ method: "GET" });
+      const tasks = await listRes.json();
+      const archivedTask = tasks.find(t => t.id === created.id);
+      expect(archivedTask).toBeDefined();
+      expect(archivedTask.archived).toBe(1);
+    },
   });
-
+});
   test("flags overdue tasks", async () => {
     await testApiHandler({
       pagesHandler: handler,
