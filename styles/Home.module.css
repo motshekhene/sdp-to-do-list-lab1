@@ -244,3 +244,26 @@
   font-size: 0.9rem;
   background: #fafafa;
 }
+
+.overdue {
+  color: red;
+  font-weight: bold;
+}
+
+.archived {
+  opacity: 0.6;
+  background: #f9f9f9;
+}
+.archived .taskTitle {
+  text-decoration: line-through;
+  color: #6c757d;
+}
+
+.overdue {
+  border: 1px solid #d9534f;
+  background: #fff5f5;
+}
+.overdue .taskTitle {
+  color: #d9534f;
+  font-weight: 700;
+}

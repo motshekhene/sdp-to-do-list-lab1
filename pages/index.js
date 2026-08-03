@@ -14,14 +14,9 @@ export default function Home() {
 
   const refreshTasks = async () => {
     try {
-      const res = await fetch("/api/tasks");
+      const res = await fetch(`/api/tasks`);
       const data = await res.json();
-      if (Array.isArray(data)) {
-        setTasks(data);
-      } else {
-        setTasks([]);
-        console.error("Expected array, got:", data);
-      }
+      setTasks(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch tasks:", err);
       setTasks([]);
@@ -81,19 +76,12 @@ export default function Home() {
     refreshTasks();
   };
 
-  useEffect(() => {
-  console.log("Sort option changed:", sortOption);
-  console.log("Tasks before sort:", tasks);
-  console.log("Tasks after sort:", sortedTasks);
-}, [sortOption, tasks]);
-
- const sortedTasks = Array.isArray(tasks) ? [...tasks].sort((a, b) => {
-  if (sortOption === "topic") return (a.topic || "").localeCompare(b.topic || "");
-  if (sortOption === "status") return (a.status || "").localeCompare(b.status || "");
-  if (sortOption === "due_date") return new Date(a.due_date || 0) - new Date(b.due_date || 0);
-  return 0;
-}) : [];
-
+  const sortedTasks = [...tasks].sort((a, b) => {
+    if (sortOption === "topic") return (a.topic || "").localeCompare(b.topic || "");
+    if (sortOption === "status") return (a.status || "").localeCompare(b.status || "");
+    if (sortOption === "due_date") return new Date(a.due_date || 0) - new Date(b.due_date || 0);
+    return 0;
+  });
 
   return (
     <div className={styles.container}>
@@ -156,8 +144,10 @@ export default function Home() {
             </select>
           </div>
 
+          {/* Active Tasks */}
+          <h2>Active Tasks</h2>
           <ul className={styles.list}>
-            {sortedTasks.map((task) => (
+            {sortedTasks.filter(t => !t.archived).map(task => (
               <li
                 key={task.id}
                 className={`${styles.listItem} ${task.overdue ? styles.overdue : ""} ${
@@ -179,7 +169,11 @@ export default function Home() {
                           : ""
                       }`}
                     >
-                      {task.status === "COMPLETE" ? "✔ Done" : task.overdue ? "⚠ Overdue" : task.status}
+                      {task.status === "COMPLETE"
+                        ? "✔ Done"
+                        : task.overdue
+                        ? "⚠ Overdue"
+                        : task.status}
                     </span>
                   </div>
                 </div>
@@ -209,6 +203,24 @@ export default function Home() {
                   >
                     Archive
                   </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Archived Tasks */}
+          <h2>Archived Tasks</h2>
+          <ul className={styles.list}>
+            {sortedTasks.filter(t => t.archived).map(task => (
+              <li key={task.id} className={`${styles.listItem} ${styles.archived}`}>
+                <div className={styles.taskInfo}>
+                  <div className={styles.taskTitle}>{task.title}</div>
+                  <div className={styles.taskDescription}>{task.description}</div>
+                  <div className={styles.taskMeta}>
+                    <span className={styles.topicTag}>{task.topic}</span>
+                    <span>{task.due_date}</span>
+                    <span className={styles.statusTag}>🗄 Archived</span>
+                  </div>
                 </div>
               </li>
             ))}
