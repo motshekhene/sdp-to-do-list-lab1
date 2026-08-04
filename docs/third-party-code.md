@@ -9,3 +9,5 @@ This project uses the following libraries and packages:
 - **jest** — Testing framework used to run unit and integration tests.
 
 - **supertest** — HTTP assertions library used to test API routes by simulating requests and responses.
+
+ A.I Declaration: The preceding document was reviewed and edited with:Microsoft-Copilot[Smart mode — model not disclosed by tool].

@@ -3,5 +3,4 @@
 
 ###  `ai/declaration.md`
 ```markdown
-The preceding document was (reviewed / planned / edited / generated) with the assistance
-of the following: Microsoft Copilot [Knowledge cutoff: June 2024]
+ A.I Declaration: The preceding document was reviewed and edited with:Microsoft-Copilot[Smart mode — model not disclosed by tool].

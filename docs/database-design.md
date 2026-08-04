@@ -48,3 +48,5 @@ The application uses **SQLite** as a local‑first database. All task data is pe
 - **Statuses**: Fixed values (`TODO`, `IN-PROGRESS`, `COMPLETE`) enforced by application logic, not customizable.  
 - **Overdue**: Derived dynamically to avoid stale data and keep schema clean.  
 - **Persistence**: SQLite ensures all tasks remain after restart, fulfilling the local‑first requirement.
+
+ A.I Declaration: The preceding document was reviewed and edited with:Microsoft-Copilot[Smart mode — model not disclosed by tool].
