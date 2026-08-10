@@ -238,6 +238,7 @@ export default function Home() {
           </ul>
 
           {/* Archived Tasks */}
+            {/* Archived Tasks */}
           <h2>Archived Tasks</h2>
           <ul className={styles.list}>
             {sortedTasks.filter(t => t.archived).map(task => (
@@ -252,6 +253,20 @@ export default function Home() {
                     </span>
                     <span className={styles.statusTag}>🗄 Archived</span>
                   </div>
+                </div>
+                <div className={styles.taskActions}>
+                  <button
+                    onClick={() => {
+                      fetch("/api/tasks", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id: task.id, unarchive: true }),
+                      }).then(refreshTasks);
+                    }}
+                    className={styles.taskActionButton}
+                  >
+                    Unarchive
+                  </button>
                 </div>
               </li>
             ))}

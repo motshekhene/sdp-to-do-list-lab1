@@ -1,5 +1,4 @@
-
-import { createTask, getTasks, updateTask, archiveTask } from "../../lib/db";
+import { createTask, getTasks, updateTask, archiveTask, unarchiveTask } from "../../lib/db";
 
 export default async function handler(req, res) {
   if (req.method === "POST") {
@@ -12,15 +11,14 @@ export default async function handler(req, res) {
     }
   }
 
-else if (req.method === "GET") {
-  try {
-    const tasks = await getTasks();
-    res.status(200).json(Array.isArray(tasks) ? tasks : []);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+  else if (req.method === "GET") {
+    try {
+      const tasks = await getTasks();
+      res.status(200).json(Array.isArray(tasks) ? tasks : []);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
-}
-
 
   else if (req.method === "PUT") {
     const { id, ...fields } = req.body;
@@ -33,12 +31,17 @@ else if (req.method === "GET") {
   }
 
   else if (req.method === "PATCH") {
-    const { id } = req.body;
+    const { id, unarchive } = req.body;
     try {
-      const changes = await archiveTask(id);
-      res.status(200).json({ archived: changes });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
+      if (unarchive) {
+        await unarchiveTask(id);
+        res.status(200).json({ message: "Task unarchived" });
+      } else {
+        await archiveTask(id);
+        res.status(200).json({ message: "Task archived" });
+      }
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   }
 
@@ -47,5 +50,3 @@ else if (req.method === "GET") {
     res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 }
-
-
